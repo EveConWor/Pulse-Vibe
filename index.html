@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse: Ireland's Vibe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col items-center justify-center">
+  <div class="container mx-auto p-4 max-w-md">
+    <h1 class="text-3xl font-bold text-center mb-4">Pulse: Ireland's Vibe</h1>
+    <p class="text-center text-lg mb-6">Smash challenges, own the vibe!</p>
+
+    <!-- Streak and Points -->
+    <div class="flex justify-between mb-6">
+      <div class="text-center">
+        <p class="text-xl">Streak: <span id="streak">0</span></p>
+      </div>
+      <div class="text-center">
+        <p class="text-xl">Points: <span id="points">0</span></p>
+      </div>
+    </div>
+
+    <!-- Challenge Section -->
+    <div id="challenge-section" class="bg-gray-800 p-4 rounded-lg mb-6">
+      <p id="challenge-text" class="text-lg mb-4">Click "New Vibe" to start!</p>
+      <div id="timer" class="text-center text-2xl mb-4 hidden">0:15</div>
+      <button id="complete-challenge" class="bg-green-500 text-white px-4 py-2 rounded w-full hidden">Complete Challenge</button>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-col gap-4 mb-6">
+      <button id="new-vibe" class="bg-blue-500 text-white px-4 py-2 rounded w-full">New Vibe</button>
+      <button id="premium-btn" class="bg-purple-500 text-white px-4 py-2 rounded w-full">Premium (€1.99)</button>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="bg-gray-800 p-4 rounded-lg w-full">
+      <h2 class="text-xl font-bold mb-4">Top Vibers</h2>
+      <ul id="leaderboard" class="list-disc pl-5">
+        <li>Conor - 1500 points</li>
+        <li>Saoirse - 1200 points</li>
+        <li>Liam - 1000 points</li>
+        <li>Aoife - 800 points</li>
+        <li>Declan - 600 points</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Anti-copy protection
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+    document.addEventListener('copy', (e) => {
+      e.preventDefault();
+    });
+
+    // Challenges
+    const challenges = [
+      { text: "Post a selfie with an Irish flag on X with #PulseVibe!", points: 50, premium: false },
+      { text: "Do a 15-second dance to an Irish tune and share on X!", points: 75, premium: false },
+      { text: "Snap a pic of your favorite Irish pub, post with #PulseVibe!", points: 60, premium: false },
+      { text: "Write a 3-word poem about Ireland, share on X!", points: 40, premium: false },
+      { text: "Record a 15-second Irish slang tutorial, post with #PulseVibe!", points: 100, premium: true }
+    ];
+
+    // DOM Elements
+    const streakEl = document.getElementById('streak');
+    const pointsEl = document.getElementById('points');
+    const challengeTextEl = document.getElementById('challenge-text');
+    const timerEl = document.getElementById('timer');
+    const completeBtn = document.getElementById('complete-challenge');
+    const newVibeBtn = document.getElementById('new-vibe');
+    const premiumBtn = document.getElementById('premium-btn');
+
+    // State
+    let streak = parseInt(localStorage.getItem('streak')) || 0;
+    let points = parseInt(localStorage.getItem('points')) || 0;
+    let isPremium = localStorage.getItem('isPremium') === 'true';
+    let lastChallengeTime = parseInt(localStorage.getItem('lastChallengeTime')) || 0;
+    let currentChallenge = null;
+
+    // Update UI
+    function updateUI() {
+      streakEl.textContent = streak;
+      pointsEl.textContent = points;
+      localStorage.setItem('streak', streak);
+      localStorage.setItem('points', points);
+      localStorage.setItem('isPremium', isPremium);
+    }
+
+    // Timer Logic
+    function startTimer() {
+      let timeLeft = 15;
+      timerEl.textContent = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+      timerEl.classList.remove('hidden');
+      completeBtn.classList.remove('hidden');
+
+      const timer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          timerEl.classList.add('hidden');
+          completeBtn.classList.add('hidden');
+          challengeTextEl.textContent = 'Time’s up! Try another vibe.';
+          newVibeBtn.disabled = false;
+        }
+      }, 1000);
+    }
+
+    // New Challenge
+    newVibeBtn.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastChallengeTime < 30000) {
+        alert('Wait 30 seconds before starting a new vibe!');
+        return;
+      }
+
+      const availableChallenges = challenges.filter(c => !c.premium || isPremium);
+      currentChallenge = availableChallenges[Math.floor(Math.random() * availableChallenges.length)];
+      challengeTextEl.textContent = currentChallenge.text;
+      newVibeBtn.disabled = true;
+      lastChallengeTime = now;
+      localStorage.setItem('lastChallengeTime', lastChallengeTime);
+      startTimer();
+    });
+
+    // Complete Challenge
+    completeBtn.addEventListener('click', () => {
+      streak++;
+      points += isPremium ? currentChallenge.points * 2 : currentChallenge.points;
+      alert(`Challenge completed! Share it on X with #PulseVibe to keep the streak going!`);
+      challengeTextEl.textContent = 'Nice one! Grab a new vibe.';
+      timerEl.classList.add('hidden');
+      completeBtn.classList.add('hidden');
+      newVibeBtn.disabled = false;
+      updateUI();
+    });
+
+    // Premium Button (Mock)
+    premiumBtn.addEventListener('click', () => {
+      isPremium = true;
+      alert('Premium activated! Enjoy double points and exclusive challenges.');
+      updateUI();
+    });
+
+    // Initialize
+    updateUI();
+  </script>
+</body>
+</html>
